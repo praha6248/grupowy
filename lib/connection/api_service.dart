@@ -12,16 +12,15 @@ import 'import package:socks_proxy/socks5.dart';
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-
         SocksTCPClient.assignToHttpClient(client, [
-          ProxySettings(InternetAddress.loopbackIPv4, 9150),
+          ProxySettings(InternetAddress.loopbackIPv4, 9050),
         ]);
-
+        client.badCertificateCallback = (cert, host, port) => true;
         return client;
       },
     );
 
-    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.connectTimeout = const Duration(seconds: 50);
   }
 
   Future<Pomiar> getOstatniPomiar() async {

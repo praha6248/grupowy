@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:path_provider/path_provider.dart';
 import 'services/local_notifications.dart';
 import 'screens/blood_saturation_screen.dart';
+import 'connection/api_service.dart'; // DODANO: Import Twojego API
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +15,24 @@ void main() async {
 
   await setupAndStartTor();
 
+  // DODANO: Wywołanie testu zaraz po starcie Tora
+  _runInitialTest();
+
   runApp(const MyApp());
+}
+
+// DODANO: Prosta funkcja testowa widoczna w konsoli
+Future<void> _runInitialTest() async {
+  debugPrint("Rozpoczynam test połączenia z API...");
+  try {
+    final api = ApiService();
+    final pomiar = await api.getOstatniPomiar();
+    debugPrint(
+      "✅ TEST API UDANY: Tętno ${pomiar.tetno}, Saturacja ${pomiar.saturacja}",
+    );
+  } catch (e) {
+    debugPrint("❌ TEST API NIEUDANY: $e");
+  }
 }
 
 Future<void> setupAndStartTor() async {
