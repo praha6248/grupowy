@@ -1,10 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/common_widgets.dart';
 import 'blood_saturation_history_screen.dart';
 import '../services/theme_service.dart';
 import '../connection/pomiar_model.dart';
-import '../connection/api_service.dart'; 
+import '../connection/api_service.dart';
+
 class BloodSaturationScreen extends StatefulWidget {
   const BloodSaturationScreen({super.key});
 
@@ -13,13 +15,45 @@ class BloodSaturationScreen extends StatefulWidget {
 }
 
 class _BloodSaturationScreenState extends State<BloodSaturationScreen> {
-  late Future<Pomiar> _ostatniPomiarFuture;
   final ApiService _apiService = ApiService();
+  Pomiar? _ostatniPomiar;
+  bool _isLoading = true;
+  String? _error;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _ostatniPomiarFuture = _apiService.getOstatniPomiar();
+    _pobierzDane();
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _pobierzDane();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _pobierzDane() async {
+    try {
+      final pomiar = await _apiService.getOstatniPomiar();
+      if (mounted) {
+        setState(() {
+          _ostatniPomiar = pomiar;
+          _isLoading = false;
+          _error = null;
+        });
+      }
+    } catch (e) {
+      if (mounted && _ostatniPomiar == null) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -47,23 +81,19 @@ class _BloodSaturationScreenState extends State<BloodSaturationScreen> {
                     );
                   },
                 ),
-
                 Expanded(
-                  child: FutureBuilder<Pomiar>(
-                    future: _ostatniPomiarFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(
+                  child: _isLoading
+                      ? Center(
                           child: CircularProgressIndicator(
                             color: isHighContrast
                                 ? Colors.yellow
                                 : const Color(0xFF4B93D1),
                           ),
-                        );
-                      } else if (snapshot.hasError) {
-                        return Center(
+                        )
+                      : _error != null
+                      ? Center(
                           child: Text(
-                            'Błąd pobierania danych:\n${snapshot.error}',
+                            'Błąd pobierania danych z Tora.\nSpróbuj ponownie później.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: isHighContrast
@@ -71,40 +101,30 @@ class _BloodSaturationScreenState extends State<BloodSaturationScreen> {
                                   : Colors.red,
                             ),
                           ),
-                        );
-                      } else if (!snapshot.hasData) {
-                        return const Center(
-                          child: Text('Brak danych o saturacji krwi.'),
-                        );
-                      }
-
-                      final Pomiar ostatniPomiar = snapshot.data!;
-
-                      return SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const SizedBox(height: 40),
-                            SaturationIndicator(isHighContrast: isHighContrast),
-                            const SizedBox(height: 20),
-
-                            ResultValue(
-                              isHighContrast: isHighContrast,
-                              saturacja: ostatniPomiar.saturacja,
-                            ),
-                            const SizedBox(height: 30),
-
-                            StatusCard(
-                              isHighContrast: isHighContrast,
-                              saturacja: ostatniPomiar.saturacja,
-                            ),
-                            const SizedBox(height: 100),
-                          ],
+                        )
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const SizedBox(height: 40),
+                              SaturationIndicator(
+                                isHighContrast: isHighContrast,
+                              ),
+                              const SizedBox(height: 20),
+                              ResultValue(
+                                isHighContrast: isHighContrast,
+                                saturacja: _ostatniPomiar?.saturacja ?? 95.0,
+                              ),
+                              const SizedBox(height: 30),
+                              StatusCard(
+                                isHighContrast: isHighContrast,
+                                saturacja: _ostatniPomiar?.saturacja ?? 95.0,
+                              ),
+                              const SizedBox(height: 100),
+                            ],
+                          ),
                         ),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
@@ -214,7 +234,7 @@ class ResultValue extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              'Ostatni pomiar',
+              'Ostatni pomiar (na żywo)',
               style: TextStyle(
                 color: isHighContrast ? Colors.yellow : Colors.grey,
                 fontSize: 14,
@@ -242,7 +262,6 @@ class StatusCard extends StatelessWidget {
     Color statusColor;
     IconData statusIcon;
 
-    // --- LOGIKA WIDEŁEK SATURACJI ---
     if (saturacja < 90) {
       statusText = 'krytycznie niskie';
       statusColor = const Color(0xFFEB4755);
@@ -328,7 +347,6 @@ class _CustomSpO2BarGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Obliczanie pozycji (zakres 70-100)
     double alignmentValue = ((saturacja - 70) / (100 - 70) * 2) - 1;
     alignmentValue = alignmentValue.clamp(-1.0, 1.0);
 

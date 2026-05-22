@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
@@ -14,13 +15,44 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  late Future<Lokalizacja> _lokalizacjaFuture;
   final ApiService _apiService = ApiService();
+  Lokalizacja? _lokalizacja;
+  bool _isLoading = true;
+  String _timeString = "--:--";
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _lokalizacjaFuture = _apiService.getOstatniaLokalizacja();
+    _pobierzGps();
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _pobierzGps();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _pobierzGps() async {
+    try {
+      final nowaLokalizacja = await _apiService.getOstatniaLokalizacja();
+      if (mounted) {
+        String parsedTime = "--:--";
+        if (nowaLokalizacja.data.length >= 16) {
+          parsedTime = nowaLokalizacja.data.substring(11, 16);
+        }
+        setState(() {
+          _lokalizacja = nowaLokalizacja;
+          _timeString = parsedTime;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Błąd pobierania pozycji GPS: $e");
+    }
   }
 
   @override
@@ -33,109 +65,99 @@ class _MapScreenState extends State<MapScreen> {
               ? Colors.black
               : const Color(0xFFF5F5F7),
           body: SafeArea(
-            child: FutureBuilder<Lokalizacja>(
-              future: _lokalizacjaFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Błąd GPS: ${snapshot.error}'));
-                } else if (!snapshot.hasData) {
-                  return const Center(child: Text('Brak lokalizacji'));
-                }
-
-                final LatLng centerLocation = LatLng(
-                  snapshot.data!.lat,
-                  snapshot.data!.lon,
-                );
-
-                return Stack(
-                  children: [
-                    FlutterMap(
-                      options: MapOptions(
-                        initialCenter: centerLocation,
-                        initialZoom: 16.0,
-                        interactionOptions: const InteractionOptions(
-                          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+            child: _isLoading || _lokalizacja == null
+                ? const Center(child: CircularProgressIndicator())
+                : Stack(
+                    children: [
+                      FlutterMap(
+                        options: MapOptions(
+                          initialCenter: LatLng(
+                            _lokalizacja!.lat,
+                            _lokalizacja!.lon,
+                          ),
+                          initialZoom: 16.0,
+                          interactionOptions: const InteractionOptions(
+                            flags:
+                                InteractiveFlag.all & ~InteractiveFlag.rotate,
+                          ),
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: isHighContrast
+                                ? 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
+                                : 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(
+                                  _lokalizacja!.lat,
+                                  _lokalizacja!.lon,
+                                ),
+                                width: 80,
+                                height: 80,
+                                child: UserLocationMarker(
+                                  isHighContrast: isHighContrast,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Positioned(
+                        top: 20,
+                        left: 20,
+                        right: 20,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isHighContrast ? Colors.black : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: isHighContrast
+                                ? Border.all(color: Colors.yellow, width: 2)
+                                : null,
+                            boxShadow: [
+                              if (!isHighContrast)
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
+                                ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Ostatnia aktualizacja: $_timeString',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: isHighContrast
+                                      ? Colors.yellow
+                                      : const Color(0xFF2D2D2D),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Pozycja namierzona (na żywo)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isHighContrast
+                                      ? Colors.yellow
+                                      : const Color(0xFF3F976E),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      children: [
-                        TileLayer(
-                          urlTemplate: isHighContrast
-                              ? 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-                              : 'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-                        ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: centerLocation,
-                              width: 80,
-                              height: 80,
-                              rotate: false,
-                              child: UserLocationMarker(
-                                isHighContrast: isHighContrast,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Positioned(
-                      top: 20,
-                      left: 20,
-                      right: 20,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isHighContrast ? Colors.black : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: isHighContrast
-                              ? Border.all(color: Colors.yellow, width: 2)
-                              : null,
-                          boxShadow: [
-                            if (!isHighContrast)
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                              ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ostatnia aktualizacja: ${snapshot.data!.data.substring(11, 16)}', // Wyciąga godzinę z daty ISO
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: isHighContrast
-                                    ? Colors.yellow
-                                    : const Color(0xFF2D2D2D),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Pozycja namierzona',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: isHighContrast
-                                    ? Colors.yellow
-                                    : const Color(0xFF3F976E),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                    ],
+                  ),
           ),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
@@ -148,7 +170,6 @@ class _MapScreenState extends State<MapScreen> {
 
 class UserLocationMarker extends StatelessWidget {
   final bool isHighContrast;
-
   const UserLocationMarker({super.key, this.isHighContrast = false});
 
   @override
@@ -162,7 +183,7 @@ class UserLocationMarker extends StatelessWidget {
           decoration: BoxDecoration(
             color: isHighContrast
                 ? Colors.yellow.withOpacity(0.3)
-                : const Color(0xFF5079287).withOpacity(0.4),
+                : const Color(0xFF079287).withOpacity(0.4),
             shape: BoxShape.circle,
           ),
         ),
@@ -170,16 +191,12 @@ class UserLocationMarker extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: isHighContrast ? Colors.black : const Color(0xFFffffff),
+            color: isHighContrast ? Colors.black : const Color(0xFFFFFFFF),
             shape: BoxShape.circle,
             border: Border.all(
               color: isHighContrast ? Colors.yellow : Colors.white,
               width: 3,
             ),
-            boxShadow: [
-              if (!isHighContrast)
-                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5),
-            ],
           ),
           child: Icon(
             Icons.person,
@@ -203,7 +220,6 @@ class UserLocationMarker extends StatelessWidget {
 
 class TrianglePainter extends CustomPainter {
   final Color color;
-
   TrianglePainter({this.color = Colors.white});
 
   @override
