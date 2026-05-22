@@ -25,7 +25,6 @@ class _HeartHistoryScreenState extends State<HeartHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    // Pobieramy 7 ostatnich pomiarów z Raspberry Pi
     _historiaFuture = _apiService.getHistoriaPomiarow(limit: 7);
   }
 
@@ -100,10 +99,8 @@ class _HeartHistoryScreenState extends State<HeartHistoryScreen> {
                       }
 
                       final data = snapshot.data!;
-                      // Odwracamy listę, aby najnowsze dane były po prawej stronie wykresu
                       final displayData = data.reversed.toList();
 
-                      // Statystyki
                       final List<int> values = displayData
                           .map((p) => p.tetno)
                           .toList();
@@ -112,7 +109,6 @@ class _HeartHistoryScreenState extends State<HeartHistoryScreen> {
                       final int minBpm = values.reduce(min);
                       final int maxBpm = values.reduce(max);
 
-                      // Punkty na wykres
                       final List<FlSpot> spots = List.generate(
                         displayData.length,
                         (i) {

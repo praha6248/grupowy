@@ -44,7 +44,6 @@ class _MapScreenState extends State<MapScreen> {
                   return const Center(child: Text('Brak lokalizacji'));
                 }
 
-                // Dynamiczne pozycjonowanie z bazy
                 final LatLng centerLocation = LatLng(
                   snapshot.data!.lat,
                   snapshot.data!.lon,

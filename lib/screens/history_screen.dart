@@ -20,7 +20,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.initState();
     _zdarzeniaFuture = _apiService.getZdarzenia(
       limit: 20,
-    ); // Pobieramy 20 ostatnich
+    ); 
   }
 
   @override
@@ -71,7 +71,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         itemBuilder: (context, index) {
                           final event = zdarzenia[index];
 
-                          // Formatujemy datę odebraną z formatu np. "2023-11-20T14:30:00"
                           DateTime dt =
                               DateTime.tryParse(event.data) ?? DateTime.now();
                           String timeStr =
@@ -108,7 +107,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  // --- Zaktualizowany widżet pojedynczego zdarzenia ---
   Widget _buildTimelineItem({
     required String time,
     required String title,

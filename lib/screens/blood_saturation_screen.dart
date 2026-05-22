@@ -4,8 +4,7 @@ import '../widgets/common_widgets.dart';
 import 'blood_saturation_history_screen.dart';
 import '../services/theme_service.dart';
 import '../connection/pomiar_model.dart';
-import '../connection/api_service.dart'; // Upewnij się, że ścieżka do api_service jest poprawna
-
+import '../connection/api_service.dart'; 
 class BloodSaturationScreen extends StatefulWidget {
   const BloodSaturationScreen({super.key});
 
@@ -20,7 +19,6 @@ class _BloodSaturationScreenState extends State<BloodSaturationScreen> {
   @override
   void initState() {
     super.initState();
-    // Pobieramy dane o saturacji z API (Raspberry Pi) podczas ładowania ekranu
     _ostatniPomiarFuture = _apiService.getOstatniPomiar();
   }
 
@@ -50,7 +48,6 @@ class _BloodSaturationScreenState extends State<BloodSaturationScreen> {
                   },
                 ),
 
-                // Wstawiamy FutureBuilder do asynchronicznego ładowania danych
                 Expanded(
                   child: FutureBuilder<Pomiar>(
                     future: _ostatniPomiarFuture,
@@ -92,14 +89,12 @@ class _BloodSaturationScreenState extends State<BloodSaturationScreen> {
                             SaturationIndicator(isHighContrast: isHighContrast),
                             const SizedBox(height: 20),
 
-                            // Przekazujemy prawdziwą saturację z bazy
                             ResultValue(
                               isHighContrast: isHighContrast,
                               saturacja: ostatniPomiar.saturacja,
                             ),
                             const SizedBox(height: 30),
 
-                            // Przekazujemy prawdziwą saturację do paska i widełek
                             StatusCard(
                               isHighContrast: isHighContrast,
                               saturacja: ostatniPomiar.saturacja,

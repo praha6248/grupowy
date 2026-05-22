@@ -4,7 +4,7 @@ import '../widgets/common_widgets.dart';
 import 'heart_history_screen.dart';
 import '../services/theme_service.dart';
 import '../connection/pomiar_model.dart';
-import '../connection/api_service.dart'; // Upewnij się, że ścieżka jest poprawna!
+import '../connection/api_service.dart'; 
 
 class HeartRateScreen extends StatefulWidget {
   const HeartRateScreen({super.key});
@@ -20,7 +20,6 @@ class _HeartRateScreenState extends State<HeartRateScreen> {
   @override
   void initState() {
     super.initState();
-    // Pobieramy dane z API (Raspberry Pi) podczas ładowania ekranu
     _ostatniPomiarFuture = _apiService.getOstatniPomiar();
   }
 
@@ -49,7 +48,6 @@ class _HeartRateScreenState extends State<HeartRateScreen> {
                   },
                 ),
 
-                // Wstawiamy FutureBuilder, by czekać na dane z bazy
                 Expanded(
                   child: FutureBuilder<Pomiar>(
                     future: _ostatniPomiarFuture,
@@ -91,7 +89,6 @@ class _HeartRateScreenState extends State<HeartRateScreen> {
                             HeartIndicator(isHighContrast: isHighContrast),
                             const SizedBox(height: 20),
 
-                            // Przekazujemy prawdziwe tętno z API
                             ResultValue(
                               isHighContrast: isHighContrast,
                               tetno: ostatniPomiar.tetno,
@@ -99,7 +96,6 @@ class _HeartRateScreenState extends State<HeartRateScreen> {
 
                             const SizedBox(height: 30),
 
-                            // Pasek z prawidziwym tętnem z API
                             StatusCard(
                               isHighContrast: isHighContrast,
                               tetno: ostatniPomiar.tetno,

@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
-import 'pomiar_model.dart';
-
-class ApiService {
+import 'import package:socks_proxy/socks5.dart';
   late Dio _dio;
   final String baseUrl =
       "http://eyfqp7vhlaxmo7adqdwz53golzfylabwzg6xoxqfpdve5g6xv6yvoyyd.onion";
@@ -14,8 +12,11 @@ class ApiService {
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-        // Łączymy się z lokalnym portem, który otworzył tor_rest
-        client.findProxy = (uri) => "SOCKS5 127.0.0.1:9050";
+
+        SocksTCPClient.assignToHttpClient(client, [
+          ProxySettings(InternetAddress.loopbackIPv4, 9150),
+        ]);
+
         return client;
       },
     );
