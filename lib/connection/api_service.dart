@@ -1,13 +1,13 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
-import 'package:socks5_proxy/socks_client.dart';
 import 'pomiar_model.dart';
+import 'package:socks5_proxy/socks_client.dart';
 
 class ApiService {
   late Dio _dio;
   final String baseUrl =
-      "http://wgndjm6j2bxbluou33tnamlulusu7rrrtz2a7usho2y7s33bl6iqrayd.onion";
+      "http://eyfqp7vhlaxmo7adqdwz53golzfylabwzg6xoxqfpdve5g6xv6yvoyyd.onion";
 
   ApiService() {
     _dio = Dio();
@@ -15,17 +15,15 @@ class ApiService {
     _dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () {
         final client = HttpClient();
-
-        client.findProxy = (uri) {
-          return "SOCKS5 127.0.0.1:9050";
-        };
-
+        SocksTCPClient.assignToHttpClient(client, [
+          ProxySettings(InternetAddress.loopbackIPv4, 9050),
+        ]);
         client.badCertificateCallback = (cert, host, port) => true;
         return client;
       },
     );
 
-    _dio.options.connectTimeout = const Duration(seconds: 20);
+    _dio.options.connectTimeout = const Duration(seconds: 50);
   }
 
   Future<Pomiar> getOstatniPomiar() async {
