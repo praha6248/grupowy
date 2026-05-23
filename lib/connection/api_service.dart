@@ -7,7 +7,7 @@ import 'package:socks5_proxy/socks_client.dart';
 class ApiService {
   late Dio _dio;
   final String baseUrl =
-      "http://eyfqp7vhlaxmo7adqdwz53golzfylabwzg6xoxqfpdve5g6xv6yvoyyd.onion";
+      "http://wgndjm6j2bxbluou33tnamlulusu7rrrtz2a7usho2y7s33bl6iqrayd.onion";
 
   ApiService() {
     _dio = Dio();
