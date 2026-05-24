@@ -65,7 +65,7 @@ class _BloodSaturationHistoryScreenState
                         ),
                       ),
                       Text(
-                        ' Nasycenie SpO2 (Historia)',
+                        ' Nasycenie SpO2',
                         style: TextStyle(
                           fontSize: 18,
                           color: isHighContrast

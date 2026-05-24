@@ -158,8 +158,8 @@ class SaturationIndicator extends StatelessWidget {
       );
     }
     return Container(
-      width: 180,
-      height: 180,
+      width: 160,
+      height: 160,
       decoration: const BoxDecoration(
         color: Color(0xFFCDE4F7),
         shape: BoxShape.circle,

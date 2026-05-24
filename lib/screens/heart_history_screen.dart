@@ -67,7 +67,7 @@ class _HeartHistoryScreenState extends State<HeartHistoryScreen> {
                         ),
                       ),
                       Text(
-                        ' Tętno (Historia)',
+                        ' Tętno',
                         style: TextStyle(
                           fontSize: 18,
                           color: isHighContrast

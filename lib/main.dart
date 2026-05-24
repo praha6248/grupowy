@@ -17,7 +17,7 @@ void main() async {
 
   // DODANO: Wywołanie testu zaraz po starcie Tora
   _runInitialTest();
-
+  await LocalNotifications.init();
   runApp(const MyApp());
 }
 
